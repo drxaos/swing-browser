@@ -19,44 +19,31 @@ public class WebAppURLConnection extends URLConnection {
         this.target = target;
     }
 
-    @Override
-    public void connect() throws IOException {
-        if (connected) {
-            return;
-        }
-        loadData();
-        connected = true;
-    }
-
     public InputStream getInputStream() throws IOException {
-        connect();
-        return new ByteArrayInputStream(data);
-    }
-
-    private void loadData() throws IOException {
         if (data != null) {
-            return;
+            return new ByteArrayInputStream(data);
         }
         URL url = getURL();
         String filePath = url.toExternalForm();
         filePath = filePath.startsWith("webapp://") ? filePath.substring("webapp://".length()) : filePath.substring("webapp:".length()); // attention: triple '/' is reduced to a single '/'
-        try {
-            URL resource = target.getResource(filePath);
-            if (resource != null) {
-                data = IOUtils.toByteArray(resource.openConnection());
-            } else {
-                data = new byte[0];
-            }
-        } catch (IOException e) {
-            data = new byte[0];
+        URL resource = target.getResource(filePath);
+        if (resource != null) {
+            data = IOUtils.toByteArray(resource.openConnection());
+        } else {
+            throw new FileNotFoundException(url.toString());
         }
+        return new ByteArrayInputStream(data);
     }
 
-    public OutputStream getOutputStream() throws IOException {
+    public OutputStream getOutputStream() {
         return new ByteArrayOutputStream();
     }
 
-    public java.security.Permission getPermission() throws IOException {
+    @Override
+    public void connect() {
+    }
+
+    public java.security.Permission getPermission() {
         return null;
     }
 

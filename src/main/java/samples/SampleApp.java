@@ -1,23 +1,35 @@
 package samples;
 
 
+import io.github.drxaos.browser.DynamicResourceHandler;
 import io.github.drxaos.browser.FxBrowser;
+import io.github.drxaos.browser.WebAppURLStreamHandlerFactory;
 import javafx.application.Platform;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Worker;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.io.ByteArrayInputStream;
+import java.net.URL;
 
-public class SampleBrowser {
+public class SampleApp {
     static FxBrowser fxBrowser;
     static JLabel statusbar;
     static JTextField urlField;
 
+    static String colorToRgb(SystemColor color) {
+        return "rgb(" + color.getRed() + "," + color.getGreen() + "," + color.getBlue() + ")";
+    }
+
+    static String APP_CSS = "body {\n" +
+            "background-color: " + colorToRgb(SystemColor.window) + ";\n" +
+            "}";
+
     public static void main(String... args) {
+        DynamicResourceHandler dynamicResourceHandler = new DynamicResourceHandler();
+        dynamicResourceHandler.addResource("/app.css", (url) -> new ByteArrayInputStream(APP_CSS.getBytes()));
+        URL.setURLStreamHandlerFactory(new WebAppURLStreamHandlerFactory(SampleApp.class, dynamicResourceHandler));
+
         SwingUtilities.invokeLater(() -> {
             final JFrame frame = new JFrame();
 
@@ -26,7 +38,7 @@ public class SampleBrowser {
             panel.setLayout(new BorderLayout());
 
             {
-                fxBrowser = new FxBrowser("http://ya.ru/");
+                fxBrowser = new FxBrowser("webapp:///index.html");
                 panel.add(fxBrowser, BorderLayout.CENTER);
                 fxBrowser.addOnLoaderStateChanged((observable, oldValue, newValue) -> {
                     statusbar.setText(newValue.name());

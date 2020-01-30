@@ -24,7 +24,6 @@ import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import org.w3c.dom.Document;
-import sun.plugin.javascript.JSObject;
 
 public class FxBrowser extends JFXPanel {
 
@@ -44,34 +43,32 @@ public class FxBrowser extends JFXPanel {
     }
 
     private void initComponents() {
-        PlatformImpl.startup(new Runnable() { // FX thread
-            @Override
-            public void run() {
-                stage = new Stage();
-                stage.setTitle("FxBrowser");
-                stage.setResizable(true);
+        // FX thread
+        PlatformImpl.startup(() -> {
+            stage = new Stage();
+            stage.setTitle("FxBrowser");
+            stage.setResizable(true);
 
-                webView = new WebView();
-                webEngine = webView.getEngine();
-                webHistory = webEngine.getHistory();
-                webEngine.load(url);
+            webView = new WebView();
+            webEngine = webView.getEngine();
+            webHistory = webEngine.getHistory();
+            webEngine.load(url);
 
-                Region root = new Region() {
-                    {
-                        getChildren().add(webView);
-                    }
+            Region root = new Region() {
+                {
+                    getChildren().add(webView);
+                }
 
-                    @Override
-                    protected void layoutChildren() {
-                        layoutInArea(webView, 0, 0, getWidth(), getHeight(), 0, HPos.CENTER, VPos.CENTER);
-                    }
+                @Override
+                protected void layoutChildren() {
+                    layoutInArea(webView, 0, 0, getWidth(), getHeight(), 0, HPos.CENTER, VPos.CENTER);
+                }
 
-                };
-                Scene scene = new Scene(root, getWidth(), getHeight(), javafx.scene.paint.Color.web("#FFF"));
-                stage.setScene(scene);
+            };
+            Scene scene = new Scene(root, getWidth(), getHeight(), javafx.scene.paint.Color.web("#FFF"));
+            stage.setScene(scene);
 
-                FxBrowser.this.setScene(scene);
-            }
+            FxBrowser.this.setScene(scene);
         });
     }
 
@@ -101,27 +98,17 @@ public class FxBrowser extends JFXPanel {
 
     public Object executeScript(String js) {
         if (webEngine.getLoadWorker().getState() == Worker.State.SUCCEEDED) {
-            return (JSObject) webEngine.executeScript(js);
+            return webEngine.executeScript(js);
         }
         return null;
     }
 
     public void addOnLoaderStateChanged(final ChangeListener<Worker.State> listener) {
-        Platform.runLater(new Runnable() {
-            @Override
-            public void run() {
-                webEngine.getLoadWorker().stateProperty().addListener(listener);
-            }
-        });
+        Platform.runLater(() -> webEngine.getLoadWorker().stateProperty().addListener(listener));
     }
 
     public void removeOnLoaderStateChanged(final ChangeListener<Worker.State> listener) {
-        Platform.runLater(new Runnable() {
-            @Override
-            public void run() {
-                webEngine.getLoadWorker().stateProperty().removeListener(listener);
-            }
-        });
+        Platform.runLater(() -> webEngine.getLoadWorker().stateProperty().removeListener(listener));
     }
 
     public static interface RelocateListener {
@@ -129,19 +116,11 @@ public class FxBrowser extends JFXPanel {
     }
 
     public void addOnRelocate(final RelocateListener listener) {
-        Platform.runLater(new Runnable() {
-            @Override
-            public void run() {
-                webHistory.getEntries().addListener(new ListChangeListener<WebHistory.Entry>() {
-                    @Override
-                    public void onChanged(Change<? extends WebHistory.Entry> c) {
-                        c.next();
-                        ObservableList<? extends WebHistory.Entry> list = c.getList();
-                        listener.onRelocate(list.get(list.size() - 1).getUrl());
-                    }
-                });
-            }
-        });
+        Platform.runLater(() -> webHistory.getEntries().addListener((ListChangeListener<WebHistory.Entry>) c -> {
+            c.next();
+            ObservableList<? extends WebHistory.Entry> list = c.getList();
+            listener.onRelocate(list.get(list.size() - 1).getUrl());
+        }));
     }
 
     public String getTitle() {

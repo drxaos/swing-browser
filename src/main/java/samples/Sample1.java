@@ -1,6 +1,7 @@
 package samples;
 
 
+import io.github.drxaos.browser.DynamicResourceHandler;
 import io.github.drxaos.browser.FxBrowser;
 import io.github.drxaos.browser.WebAppURLStreamHandlerFactory;
 
@@ -11,7 +12,7 @@ import java.net.URL;
 public class Sample1 {
 
     public static void main(String... args) {
-        URL.setURLStreamHandlerFactory(new WebAppURLStreamHandlerFactory(Sample1.class));
+        URL.setURLStreamHandlerFactory(new WebAppURLStreamHandlerFactory(Sample1.class, new DynamicResourceHandler()));
 
         SwingUtilities.invokeLater(new Runnable() {
             @Override
